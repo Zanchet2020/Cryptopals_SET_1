@@ -7,6 +7,8 @@ import (
 	"errors"
 	//	"slices"
 	"strings"
+	"os"
+	"bufio"
 )
 
 // var word_weight_dictionary = map[string]uint{
@@ -140,7 +142,7 @@ func char_xor(input string, char int) string{
 }
 
 
-func break_single_byte_XOR_cypher(input string) (string, byte){
+func break_single_byte_XOR_cypher(input string) (string, byte, uint){
 	//var str_len = len(input)
 	var scores = make([]uint, 256)
 	var max uint = 0
@@ -159,50 +161,81 @@ func break_single_byte_XOR_cypher(input string) (string, byte){
 			}
 		}
 		if scores[i] > max {
-			fmt.Println("Max:", max, "Score:", scores[i], "Letter:", string(i))
+			//fmt.Println("Max:", max, "Score:", scores[i], "Letter:", string(i))
 			max = scores[i]
 			message = str
 			cypher = byte(i)
 		}
 	}
 	//fmt.Println("Message:", message, "      ", "Cypher:", string(cypher))
-	return message, byte(cypher)
+	return message, byte(cypher), max
 }
 
 
 
 func main(){
+	{
 	// Convert hex to base 64 ====================================================
-	fmt.Println("Convert hex to base 64:")
-	var input = "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d"
-	fmt.Println(hex_to_base64(input), "\n===========================\n\n")
-
+		fmt.Println(">>>> Convert hex to base 64:")
+		var input = "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d"
+		fmt.Println(hex_to_base64(input), "\n===========================\n\n")
+	}
 
 
 	
 	// Fixed XOR ================================================================
-	fmt.Println("Fixed XOR")
-	var input1 = "1c0111001f010100061a024b53535009181c"
-	var input2 = "686974207468652062756c6c277320657965"
-	var output, err = fixed_xor(input1, input2)
-	if err != nil {
-		fmt.Println(err)
-		return
+	{
+		fmt.Println(">>>> Fixed XOR")
+		var input1 = "1c0111001f010100061a024b53535009181c"
+		var input2 = "686974207468652062756c6c277320657965"
+		var output, err = fixed_xor(input1, input2)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Println(output, "\n===========================\n\n")
 	}
-	fmt.Println(output, "\n===========================\n\n")
-
 
 
 
 	
 	// Single Byte XOR cypher =====================================================
-	fmt.Println("Single Byte XOR Cypher")
-	message, cypher_key := break_single_byte_XOR_cypher(hex_encoded_string)	
-	fmt.Println("Message:", message, "      ", "Cypher:", string(cypher_key))
+	{
+		fmt.Println(">>>> Single Byte XOR Cypher")
+		message, cypher_key, _ := break_single_byte_XOR_cypher(hex_encoded_string)	
+		fmt.Println("Message:", message, "\nCypher:", string(cypher_key))
+		fmt.Println("===========================\n\n")
+	}
 
 
 
 
+
+
+	// Detect single character XOR
+	{	
+		fmt.Println(">>>> Detect single byte XOR Cypher")
+		file, err := os.Open("strings_to_decode.txt")
+		if err!=nil{
+			fmt.Println(err)
+		}
+		defer file.Close()
+
+		scanner := bufio.NewScanner(file)
+		var max_score uint = 0
+		var message string
+		var key byte
+		for scanner.Scan(){
+			msg, cypher_key, score := break_single_byte_XOR_cypher(scanner.Text())
+			if score > max_score {
+				message = msg
+				key = cypher_key
+				max_score = score
+			}
+		}
+		fmt.Println("Message:", strings.Trim(message, "\n "), "\nCypher:", string(key))
+		fmt.Println("===========================\n\n")
+	}
 	
 
 	//
