@@ -172,10 +172,20 @@ func break_single_byte_XOR_cypher(input string) (string, byte, uint){
 }
 
 
+func repeating_key_XOR_cypher(input string, key string) string {
+	key_bytes := []byte(key)
+	var output = make([]byte, len(input))
+	for i, c := range input{
+		output[i] = byte(c) ^ key_bytes[i % len(key)]
+	}
+	return hex.EncodeToString(output)
+}
+
 
 func main(){
 	{
-	// Convert hex to base 64 ====================================================
+		// Convert hex to base 64 ====================================================
+		fmt.Println("===========================")
 		fmt.Println(">>>> Convert hex to base 64:")
 		var input = "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d"
 		fmt.Println(hex_to_base64(input), "\n===========================\n\n")
@@ -185,6 +195,7 @@ func main(){
 	
 	// Fixed XOR ================================================================
 	{
+		fmt.Println("===========================")
 		fmt.Println(">>>> Fixed XOR")
 		var input1 = "1c0111001f010100061a024b53535009181c"
 		var input2 = "686974207468652062756c6c277320657965"
@@ -201,6 +212,7 @@ func main(){
 	
 	// Single Byte XOR cypher =====================================================
 	{
+		fmt.Println("===========================")
 		fmt.Println(">>>> Single Byte XOR Cypher")
 		message, cypher_key, _ := break_single_byte_XOR_cypher(hex_encoded_string)	
 		fmt.Println("Message:", message, "\nCypher:", string(cypher_key))
@@ -213,7 +225,8 @@ func main(){
 
 
 	// Detect single character XOR
-	{	
+	{
+		fmt.Println("===========================")
 		fmt.Println(">>>> Detect single byte XOR Cypher")
 		file, err := os.Open("strings_to_decode.txt")
 		if err!=nil{
@@ -236,7 +249,25 @@ func main(){
 		fmt.Println("Message:", strings.Trim(message, "\n "), "\nCypher:", string(key))
 		fmt.Println("===========================\n\n")
 	}
+
+
+	// Implement repeating-key XOR
+	{
+		fmt.Println("===========================")
+		fmt.Println(">>>> Implement repeating-key XOR")
+		var output string = repeating_key_XOR_cypher(`Burning 'em, if you ain't quick and nimble
+			I go crazy when I hear a cymbal`, "ICE")
+		fmt.Println(output)
+		fmt.Println("===========================\n\n")
+	}
 	
 
-	//
+	// Break Repeating Key XOR
+	{
+		fmt.Println("===========================")
+		fmt.Println(">>>> Break Repeating Key XOR")
+		
+
+		fmt.Println("===========================\n\n")
+	}
 }
