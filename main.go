@@ -8,6 +8,7 @@ import (
 	"strings"
 	"os"
 	"bufio"
+	"sort"
 )
 
 // var word_weight_dictionary = map[string]uint{
@@ -175,6 +176,10 @@ func break_single_byte_XOR_cypher(input string) (string, byte, uint){
 	return message, byte(cypher), max
 }
 
+
+
+// Cool litte algorithm to count the number of bits in a uint32 in constant time found in this website:
+// https://web.archive.org/web/20151229003112/http://blogs.msdn.com/b/jeuge/archive/2005/06/08/hakmem-bit-count.aspx
  func BitCount(n uint32) int{
 	var count uint32;
     
@@ -204,6 +209,59 @@ func repeating_key_XOR_cypher(input string, key string) string {
 		output[i] = byte(c) ^ key_bytes[i % len(key)]
 	}
 	return hex.EncodeToString(output)
+}
+
+func break_repeating_XOR(input string) (string, string){
+	input_bytes := []byte(input)
+
+	const max_keysize = 20
+	const min_keysize = 2
+	const keysize_guesses int = 3
+	var distances = make([]float32, max_keysize - min_keysize)
+	
+	// Getting lowest distance
+	for KEYSIZE := min_keysize; KEYSIZE < max_keysize; KEYSIZE++{
+		var dist int = edit_distance(string(input_bytes[:KEYSIZE]), string(input_bytes[KEYSIZE:2*KEYSIZE]))
+		distances[KEYSIZE - min_keysize] = float32(dist) / float32(KEYSIZE)
+	}
+
+	type distance_keysize_pair struct{
+		distance float32
+		keysize int
+	}
+
+	var probable_keysizes = make([]distance_keysize_pair, keysize_guesses)
+	
+	for i, d := range distances{
+		if probable_keysizes[0].distance == 0{
+			probable_keysizes[0].distance = d
+			probable_keysizes[0].keysize = i + min_keysize
+		} else if d < probable_keysizes[keysize_guesses - 1].distance {
+			probable_keysizes[keysize_guesses - 1].distance = d
+			probable_keysizes[keysize_guesses - 1].keysize = i + min_keysize
+		}
+
+		sort.Slice(probable_keysizes, func (p, q int) bool{
+			return probable_keysizes[p].distance < probable_keysizes[q].distance
+		})
+	}
+
+	//for i, dkp := probable_keysizes{
+		
+
+	//}
+	
+	// fmt.Println(distances)
+
+	// for _, d := range probable_keysizes{
+	// 	fmt.Println(d.distance, d.keysize)
+	// }
+	
+	// for i := range probable_keysizes{
+	// 	probable_
+	// }
+	
+	return "", ""
 }
 
 
@@ -255,7 +313,6 @@ func main(){
 		if err!=nil{
 			fmt.Println(err)
 		}
-		defer file.Close()
 
 		scanner := bufio.NewScanner(file)
 		var max_score uint = 0
@@ -269,6 +326,8 @@ func main(){
 				max_score = score
 			}
 		}
+
+		file.Close()
 		fmt.Println("Message:", strings.Trim(message, "\n "), "\nCypher:", string(key))
 		fmt.Println("===========================\n\n")
 	}
@@ -290,7 +349,22 @@ func main(){
 		fmt.Println("===========================")
 		fmt.Println(">>>> Break Repeating Key XOR")
 		
-		fmt.Println("Lev Distance:", edit_distance("this is a test", "wokka wokka!!!"))
+		//fmt.Println("Lev Distance:", edit_distance("this is a test", "wokka wokka!!!"))
+
+		file_content, err := os.ReadFile("6.txt")
+		if err != nil{
+			fmt.Println(err)
+		}
+
+		b64_decoded, err := base64.StdEncoding.DecodeString(string(file_content))
+		if err != nil {
+			fmt.Println("Error decoding Base64:", err)
+			return
+		}
+		
+		var decrypted, key string = break_repeating_XOR(string(b64_decoded))
+		fmt.Println("Decrypted message:\n", decrypted, "\nKey:", key)
+
 		fmt.Println("===========================\n\n")
 	}
 }
