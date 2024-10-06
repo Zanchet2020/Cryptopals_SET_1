@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/base64"
 	"errors"
-	//	"slices"
 	"strings"
 	"os"
 	"bufio"
@@ -106,6 +105,14 @@ func hex_to_base64(input string) string{
 	return output
 }
 
+func xor_byte_slice(a []byte, b []byte) []byte{
+	var output []byte = make([]byte, len(a))
+	for i := range output{
+		output[i] = a[i] ^ b[i]
+	}
+	return output
+}
+
 func fixed_xor(input1 string, input2 string) (string, error) {
 	bytes1, err1 := hex.DecodeString(input1)
 	if err1 != nil {
@@ -120,11 +127,8 @@ func fixed_xor(input1 string, input2 string) (string, error) {
 	if len(bytes1) != len(bytes2){
 		return "", errors.New("Strings must have the same lenght")
 	}
-	
-	var output []byte = make([]byte, len(bytes1))
-	for i := range bytes1{
-		output[i] = bytes1[i] ^ bytes2[i]
-	}
+
+	var output []byte = xor_byte_slice(bytes1, bytes2)
 	return hex.EncodeToString(output), nil
 }
 
@@ -171,6 +175,27 @@ func break_single_byte_XOR_cypher(input string) (string, byte, uint){
 	return message, byte(cypher), max
 }
 
+ func BitCount(n uint32) int{
+	var count uint32;
+    
+	count = n - ((n >> 1) & 033333333333) - ((n >> 2) & 011111111111)
+	return int(((count + (count >> 3)) & 030707070707) % 63)
+ }
+
+func hamming_distance(a string, b string) int {
+	var count int
+	
+	var xored []byte = xor_byte_slice([]byte(a), []byte(b))
+	
+	for _, byte := range xored{
+		count += BitCount(uint32(byte))
+	} 
+	return count
+}
+
+func edit_distance(a string, b string) int {	
+	return hamming_distance(a, b)
+}
 
 func repeating_key_XOR_cypher(input string, key string) string {
 	key_bytes := []byte(key)
@@ -222,8 +247,6 @@ func main(){
 
 
 
-
-
 	// Detect single character XOR
 	{
 		fmt.Println("===========================")
@@ -267,7 +290,7 @@ func main(){
 		fmt.Println("===========================")
 		fmt.Println(">>>> Break Repeating Key XOR")
 		
-
+		fmt.Println("Lev Distance:", edit_distance("this is a test", "wokka wokka!!!"))
 		fmt.Println("===========================\n\n")
 	}
 }
